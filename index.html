@@ -77,4 +77,83 @@
                                 <th>Trend</th>
                             </tr>
                         </thead>
-                        <tbody id="watchlistBody
+                        <tbody id="watchlistBody">
+                            </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+let myChart;
+
+async function fetchNav() {
+    const code = document.getElementById('schemeInput').value || '119551';
+    const response = await fetch(`https://api.mfapi.in/mf/${code}`);
+    const result = await response.json();
+
+    if(result.status === "SUCCESS") {
+        const meta = result.meta;
+        const data = result.data.slice(0, 30).reverse(); // Last 30 days
+
+        // Update UI
+        document.getElementById('fundName').innerText = meta.scheme_name;
+        document.getElementById('fundCategory').innerText = meta.scheme_category;
+        document.getElementById('currentNav').innerText = `₹ ${data[data.length-1].nav}`;
+        document.getElementById('lastUpdated').innerText = `Updated: ${data[data.length-1].date}`;
+
+        updateChart(data);
+        addToWatchlist(meta, data[data.length-1].nav);
+    } else {
+        alert("Scheme code not found. Please try again.");
+    }
+}
+
+function updateChart(navData) {
+    const labels = navData.map(d => d.date);
+    const values = navData.map(d => d.nav);
+
+    if (myChart) myChart.destroy();
+    
+    const ctx = document.getElementById('navChart').getContext('2d');
+    myChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'NAV Value (Last 30 Days)',
+                data: values,
+                borderColor: '#1a237e',
+                backgroundColor: 'rgba(26, 35, 126, 0.1)',
+                fill: true,
+                tension: 0.3
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } }
+        }
+    });
+}
+
+function addToWatchlist(meta, currentNav) {
+    const body = document.getElementById('watchlistBody');
+    const row = `<tr>
+        <td><strong>${meta.scheme_name}</strong></td>
+        <td><span class="badge bg-light text-dark border">${meta.scheme_category}</span></td>
+        <td class="fw-bold">₹ ${currentNav}</td>
+        <td><span class="text-success">▲ Live</span></td>
+    </tr>`;
+    body.innerHTML = row + body.innerHTML;
+}
+
+// Initial Load
+window.onload = fetchNav;
+</script>
+</body>
+</html>
