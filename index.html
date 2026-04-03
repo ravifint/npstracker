@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NPS NAV Tracker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .gradient-bg { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); }
+    </style>
+</head>
+<body class="bg-gray-50 font-sans">
+
+    <header class="gradient-bg text-white p-6 shadow-lg">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-2xl font-bold tracking-tight">NPS <span class="text-blue-400">Live</span> Tracker</h1>
+            <p class="text-sm opacity-75">Last Updated: April 2026</p>
+        </div>
+    </header>
+
+    <main class="container mx-auto py-8 px-4">
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-blue-500">
+                <h3 class="text-gray-500 text-sm font-medium">Top Performing PFM</h3>
+                <p class="text-2xl font-bold">HDFC Pension</p>
+                <span class="text-green-500 text-sm">↑ 14.2% (1Y)</span>
+            </div>
+            <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-purple-500">
+                <h3 class="text-gray-500 text-sm font-medium">Market Sentiment</h3>
+                <p class="text-2xl font-bold">Bullish</p>
+                <span class="text-blue-500 text-sm">Equity Class Leading</span>
+            </div>
+            <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-orange-500">
+                <h3 class="text-gray-500 text-sm font-medium">Total Schemes Tracked</h3>
+                <p class="text-2xl font-bold">84</p>
+                <span class="text-gray-400 text-sm">Tier I & Tier II</span>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            <div class="lg:col-span-2 bg-white rounded-xl shadow-sm overflow-hidden">
+                <div class="p-6 border-b border-gray-100 flex justify-between items-center">
+                    <h2 class="text-lg font-bold text-gray-800">Available Investment Funds</h2>
+                    <input type="text" placeholder="Search fund..." class="border rounded-lg px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left">
+                        <thead class="bg-gray-50 text-gray-600 text-sm">
+                            <tr>
+                                <th class="p-4">Fund Manager</th>
+                                <th class="p-4">Scheme</th>
+                                <th class="p-4">Current NAV</th>
+                                <th class="p-4">Change</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100 text-gray-700">
+                            <tr class="hover:bg-blue-50 cursor-pointer transition-colors" onclick="updateChart('HDFC Scheme E', [45, 48, 52, 51, 55, 59, 62])">
+                                <td class="p-4 font-medium">HDFC Pension Fund</td>
+                                <td class="p-4"><span class="bg-green-100 text-green-700 px-2 py-1 rounded text-xs mr-2">E</span> Equity Tier I</td>
+                                <td class="p-4 font-bold">₹62.45</td>
+                                <td class="p-4 text-green-600">+1.2%</td>
+                            </tr>
+                            <tr class="hover:bg-blue-50 cursor-pointer transition-colors" onclick="updateChart('SBI Scheme G', [28, 29, 29.5, 30, 30.2, 30.5, 31])">
+                                <td class="p-4 font-medium">SBI Pension Fund</td>
+                                <td class="p-4"><span class="bg-blue-100 text-blue-700 px-2 py-1 rounded text-xs mr-2">G</span> Gov-Sec Tier I</td>
+                                <td class="p-4 font-bold">₹31.12</td>
+                                <td class="p-4 text-green-600">+0.1%</td>
+                            </tr>
+                            <tr class="hover:bg-blue-50 cursor-pointer transition-colors" onclick="updateChart('ICICI Scheme C', [35, 36, 35.5, 37, 38, 39, 40])">
+                                <td class="p-4 font-medium">ICICI Prudential</td>
+                                <td class="p-4"><span class="bg-purple-100 text-purple-700 px-2 py-1 rounded text-xs mr-2">C</span> Corp Bond Tier I</td>
+                                <td class="p-4 font-bold">₹40.88</td>
+                                <td class="p-4 text-red-600">-0.05%</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-sm p-6">
+                <h2 id="chartTitle" class="text-lg font-bold text-gray-800 mb-4">HDFC Scheme E Performance</h2>
+                <div class="h-64">
+                    <canvas id="navChart"></canvas>
+                </div>
+                <div class="mt-6">
+                    <h4 class="text-sm font-semibold text-gray-600 mb-2">Fund Insights</h4>
+                    <p class="text-xs text-gray-500 leading-relaxed">
+                        This scheme has outperformed the benchmark by 2.4% over the last quarter. Suggested for long-term investors with a high risk appetite.
+                    </p>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <script>
+        const ctx = document.getElementById('navChart').getContext('2d');
+        let myChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                datasets: [{
+                    label: 'NAV Value (₹)',
+                    data: [45, 48, 52, 51, 55, 59, 62],
+                    borderColor: '#3b82f6',
+                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: { y: { beginAtZero: false } }
+            }
+        });
+
+        function updateChart(schemeName, newData) {
+            document.getElementById('chartTitle').innerText = schemeName + " Performance";
+            myChart.data.datasets[0].data = newData;
+            myChart.update();
+        }
+    </script>
+</body>
+</html>
