@@ -2,142 +2,170 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NavTrack Global | Real-Time</title>
+    <title>Manager Performance Portal</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        :root { --primary: #003366; --accent: #ffcc00; }
-        body { background: #f4f6f9; font-family: 'Segoe UI', sans-serif; }
-        .nav-header { background: var(--primary); color: white; border-bottom: 4px solid var(--accent); padding: 20px 0; }
-        .search-box { margin-top: -30px; }
-        .fund-card { cursor: pointer; border: none; border-radius: 10px; transition: 0.3s; margin-bottom: 10px; }
-        .fund-card:hover { transform: scale(1.02); box-shadow: 0 10px 20px rgba(0,0,0,0.1); background: #fffdf0; }
-        .nav-big { font-size: 3.5rem; font-weight: 800; color: var(--primary); line-height: 1; }
-        #results { max-height: 500px; overflow-y: auto; padding: 10px; }
+        :root { --dark-blue: #001529; --accent: #1890ff; }
+        body { background-color: #f0f2f5; font-family: 'Segoe UI', sans-serif; }
+        .sidebar { background: white; height: 100vh; border-right: 1px solid #ddd; overflow-y: auto; }
+        .nav-pill-custom { cursor: pointer; padding: 12px; border-bottom: 1px solid #f0f0f0; transition: 0.3s; }
+        .nav-pill-custom:hover { background: #e6f7ff; color: var(--accent); }
+        .header-bar { background: var(--dark-blue); color: white; padding: 15px; }
+        .stat-card { border-radius: 8px; border: none; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        .sort-btn { font-size: 0.8rem; cursor: pointer; color: var(--accent); text-decoration: underline; }
     </style>
 </head>
 <body>
 
-<div class="nav-header text-center">
-    <div class="container">
-        <h1 class="fw-bold">📊 NavTrack Global</h1>
-        <p>Live Equity & Bond NAVs • All Fund Managers</p>
-    </div>
-</div>
-
-<div class="container search-box">
-    <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card shadow p-4">
-                <div class="input-group">
-                    <input type="text" id="query" class="form-control form-control-lg" placeholder="Search any fund (e.g. 'SBI Equity', 'HDFC Bond')">
-                    <button class="btn btn-warning fw-bold px-4" onclick="searchMarket()">SEARCH</button>
-                </div>
-                <div id="status" class="mt-2 small text-muted text-center">Ready to search across 15,000+ schemes...</div>
-            </div>
+<div class="header-bar shadow-sm">
+    <div class="container-fluid d-flex justify-content-between align-items-center">
+        <h4 class="mb-0">WealthInsights 2026 | Manager Dashboard</h4>
+        <div class="d-flex gap-2">
+            <input type="text" id="managerInput" class="form-control form-control-sm" placeholder="Enter Manager/AMC Name (e.g. HDFC)">
+            <button class="btn btn-primary btn-sm" onclick="discoverFunds()">Load Funds</button>
         </div>
     </div>
 </div>
 
-<div class="container mt-5">
+<div class="container-fluid">
     <div class="row">
-        <div class="col-md-5">
-            <h5 class="mb-3 text-secondary">Matching Schemes</h5>
-            <div id="results">
-                <div class="text-center text-muted py-5">Results will appear here</div>
+        <div class="col-md-4 sidebar p-3">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="text-muted mb-0">Managed Schemes</h6>
+                <div>
+                    <span class="sort-btn me-2" onclick="sortFunds('name')">Name</span>
+                    <span class="sort-btn" onclick="sortFunds('nav')">NAV</span>
+                </div>
+            </div>
+            <div id="fundList">
+                <div class="text-center mt-5 text-muted small">Enter a manager or AMC name above to start.</div>
             </div>
         </div>
 
-        <div class="col-md-7">
-            <div id="details" class="card shadow-sm p-4 d-none">
-                <div class="d-flex justify-content-between align-items-start mb-3">
-                    <div>
-                        <span id="detCat" class="badge bg-primary mb-2">Category</span>
-                        <h3 id="detName" class="h4 fw-bold">Select a Fund</h3>
+        <div class="col-md-8 p-4">
+            <div id="chartSection" class="d-none">
+                <div class="card stat-card p-4 mb-4">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h2 id="displayFundName" class="h4">Select a Scheme</h2>
+                            <span id="displayCategory" class="badge bg-info">Category</span>
+                        </div>
+                        <div class="text-end">
+                            <div class="h3 mb-0 text-primary" id="displayNav">₹ 0.00</div>
+                            <small class="text-muted" id="displayDate">Live NAV</small>
+                        </div>
                     </div>
-                    <span id="detCode" class="text-muted small">Code: --</span>
+                    <div class="mt-4" style="height: 350px;">
+                        <canvas id="performanceChart"></canvas>
+                    </div>
                 </div>
-                <hr>
-                <div class="text-center py-4">
-                    <div class="text-muted small mb-2 uppercase fw-bold">Current Net Asset Value (NAV)</div>
-                    <div id="detNav" class="nav-big">₹ 0.00</div>
-                    <div id="detDate" class="mt-3 text-muted">Updating...</div>
-                </div>
-                <div class="p-3 bg-light rounded text-center small">
-                    Tracking live data from AMC servers via AMFI
-                </div>
+            </div>
+            <div id="placeholder" class="text-center py-5">
+                <h5 class="text-muted">Select a fund from the left to view growth trends</h5>
             </div>
         </div>
     </div>
 </div>
 
 <script>
+    let currentFundData = [];
+    let myChart = null;
     const PROXY = "https://api.allorigins.win/get?url=";
-    const API = "https://api.mfapi.in/mf";
 
-    async function searchMarket() {
-        const query = document.getElementById('query').value;
-        const status = document.getElementById('status');
-        const resultsDiv = document.getElementById('results');
-
-        if (query.length < 3) {
-            alert("Please type at least 3 letters.");
-            return;
-        }
-
-        status.innerHTML = "🔍 Searching the entire market...";
-        resultsDiv.innerHTML = '<div class="text-center py-5"><div class="spinner-border text-primary"></div></div>';
+    async function discoverFunds() {
+        const query = document.getElementById('managerInput').value;
+        if(query.length < 3) return alert("Please enter at least 3 characters.");
+        
+        const listDiv = document.getElementById('fundList');
+        listDiv.innerHTML = '<div class="text-center p-5"><div class="spinner-border spinner-border-sm text-primary"></div></div>';
 
         try {
-            // Searching only for the specific query to keep the request small
-            const searchUrl = `${API}/search?q=${encodeURIComponent(query)}`;
-            const response = await fetch(PROXY + encodeURIComponent(searchUrl));
-            const json = await response.json();
+            const res = await fetch(PROXY + encodeURIComponent(`https://api.mfapi.in/mf/search?q=${query}`));
+            const json = await res.json();
             const data = JSON.parse(json.contents);
 
-            if (data.length === 0) {
-                resultsDiv.innerHTML = '<div class="alert alert-warning">No funds found. Try a different name.</div>';
-                status.innerHTML = "Ready.";
-                return;
-            }
+            // Fetch live NAV for top 15 results to enable sorting
+            const enrichedData = await Promise.all(data.slice(0, 15).map(async (f) => {
+                const navRes = await fetch(PROXY + encodeURIComponent(`https://api.mfapi.in/mf/${f.schemeCode}/latest`));
+                const navJson = await navRes.json();
+                const navData = JSON.parse(navJson.contents);
+                return {
+                    code: f.schemeCode,
+                    name: f.schemeName,
+                    nav: parseFloat(navData.data[0].nav),
+                    date: navData.data[0].date,
+                    category: navData.meta.scheme_category
+                };
+            }));
 
-            status.innerHTML = `Found ${data.length} matching funds.`;
-            resultsDiv.innerHTML = data.slice(0, 50).map(f => `
-                <div class="card fund-card p-3" onclick="getNav(${f.schemeCode})">
-                    <div class="fw-bold">${f.schemeName}</div>
-                    <div class="small text-muted">Code: ${f.schemeCode}</div>
-                </div>
-            `).join('');
-
-        } catch (err) {
-            status.innerHTML = "❌ Connection failed. Check internet.";
-            resultsDiv.innerHTML = "";
+            currentFundData = enrichedData;
+            renderList();
+        } catch (e) {
+            listDiv.innerHTML = '<div class="alert alert-danger small">Network error. Please try again.</div>';
         }
     }
 
-    async function getNav(code) {
-        const details = document.getElementById('details');
-        details.classList.remove('d-none');
-        details.style.opacity = "0.5";
+    function renderList() {
+        const listDiv = document.getElementById('fundList');
+        listDiv.innerHTML = currentFundData.map(f => `
+            <div class="nav-pill-custom" onclick="showGraph(${f.code})">
+                <div class="fw-bold small text-truncate">${f.name}</div>
+                <div class="d-flex justify-content-between mt-1">
+                    <span class="text-muted small" style="font-size: 11px;">NAV: ₹${f.nav}</span>
+                    <span class="text-primary small" style="font-size: 11px;">View Graph →</span>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function sortFunds(type) {
+        if(type === 'name') {
+            currentFundData.sort((a, b) => a.name.localeCompare(b.name));
+        } else {
+            currentFundData.sort((a, b) => b.nav - a.nav);
+        }
+        renderList();
+    }
+
+    async function showGraph(code) {
+        document.getElementById('placeholder').classList.add('d-none');
+        document.getElementById('chartSection').classList.remove('d-none');
+        
+        const fund = currentFundData.find(f => f.code === code);
+        document.getElementById('displayFundName').innerText = fund.name;
+        document.getElementById('displayCategory').innerText = fund.category;
+        document.getElementById('displayNav').innerText = `₹ ${fund.nav}`;
+        document.getElementById('displayDate').innerText = `As of ${fund.date}`;
 
         try {
-            const navUrl = `${API}/${code}/latest`;
-            const response = await fetch(PROXY + encodeURIComponent(navUrl));
-            const json = await response.json();
-            const data = JSON.parse(json.contents);
+            const res = await fetch(PROXY + encodeURIComponent(`https://api.mfapi.in/mf/${code}`));
+            const json = await res.json();
+            const fullData = JSON.parse(json.contents);
+            const history = fullData.data.slice(0, 30).reverse();
 
-            document.getElementById('detName').innerText = data.meta.scheme_name;
-            document.getElementById('detCat').innerText = data.meta.scheme_category;
-            document.getElementById('detCode').innerText = `Code: ${code}`;
-            document.getElementById('detNav').innerText = `₹ ${data.data[0].nav}`;
-            document.getElementById('detDate').innerText = `As of: ${data.data[0].date}`;
-            
-            details.style.opacity = "1";
-        } catch (e) {
-            alert("Error fetching NAV details.");
-        }
+            const labels = history.map(d => d.date);
+            const values = history.map(d => parseFloat(d.nav));
+
+            if (myChart) myChart.destroy();
+            const ctx = document.getElementById('performanceChart').getContext('2d');
+            myChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'NAV History',
+                        data: values,
+                        borderColor: '#1890ff',
+                        backgroundColor: 'rgba(24, 144, 255, 0.1)',
+                        fill: true,
+                        tension: 0.2
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+        } catch (e) { alert("Error loading graph data."); }
     }
 </script>
-
 </body>
 </html>
