@@ -3,144 +3,78 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Live NPS Fund Tracker</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <title>NavTrack Pro | Live Fund Insights</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
     <style>
-        .gradient-bg { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); }
-        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        body { font-family: 'Inter', sans-serif; background-color: #f8f9fa; }
+        .navbar { background: #1a237e; }
+        .card { border: none; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        .nav-value { font-size: 1.5rem; font-weight: 600; color: #1a237e; }
+        .status-badge { font-size: 0.75rem; padding: 4px 8px; border-radius: 20px; }
+        #chart-container { height: 300px; }
     </style>
 </head>
-<body class="bg-gray-50 font-sans">
+<body>
 
-    <header class="gradient-bg text-white p-6 shadow-lg">
-        <div class="container mx-auto flex justify-between items-center">
-            <div>
-                <h1 class="text-2xl font-bold tracking-tight">NPS <span class="text-blue-400">Live</span> Explorer</h1>
-                <p class="text-xs opacity-75">Tracking all Pension Fund Managers (PFMs)</p>
-            </div>
-            <div id="status" class="text-xs bg-blue-500/20 px-3 py-1 rounded-full border border-blue-400/30">
-                Connected to NPS API
-            </div>
-        </div>
-    </header>
+<nav class="navbar navbar-dark shadow-sm mb-4">
+    <div class="container">
+        <a class="navbar-brand fw-bold" href="#">📊 NavTrack Pro</a>
+    </div>
+</nav>
 
-    <main class="container mx-auto py-8 px-4">
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            
-            <div class="lg:col-span-1 bg-white rounded-xl shadow-sm flex flex-col h-[700px]">
-                <div class="p-4 border-b">
-                    <input type="text" id="searchInput" onkeyup="filterFunds()" placeholder="Search PFM or Scheme (e.g. HDFC E)..." 
-                           class="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none">
+<div class="container">
+    <div class="row">
+        <div class="col-lg-4 mb-4">
+            <div class="card p-4">
+                <h5 class="mb-3">Track New Fund</h5>
+                <div class="mb-3">
+                    <label class="form-label text-muted small">Select Fund Category</label>
+                    <select class="form-select" id="categoryFilter">
+                        <option value="all">All Asset Classes</option>
+                        <option value="Equity">Equity (Growth)</option>
+                        <option value="Debt">Corporate Bonds</option>
+                        <option value="Govt">Govt Securities (G-Sec)</option>
+                    </select>
                 </div>
-                <div id="fundList" class="overflow-y-auto flex-grow custom-scrollbar">
-                    <div class="p-8 text-center text-gray-400">Loading funds...</div>
+                <div class="input-group mb-3">
+                    <input type="text" id="schemeInput" class="form-control" placeholder="Enter Scheme Code (e.g. 119551)">
+                    <button class="btn btn-primary" onclick="fetchNav()">Track</button>
                 </div>
-            </div>
-
-            <div class="lg:col-span-2 space-y-6">
-                <div class="bg-white rounded-xl shadow-sm p-6">
-                    <div class="flex justify-between items-start mb-6">
-                        <div>
-                            <h2 id="activeFundName" class="text-xl font-bold text-gray-800">Select a Fund</h2>
-                            <p id="activeFundCode" class="text-sm text-gray-500">Click a scheme on the left to view performance</p>
-                        </div>
-                        <div class="text-right">
-                            <p id="currentNav" class="text-3xl font-black text-blue-600">--</p>
-                            <p class="text-xs text-gray-400 uppercase tracking-widest font-bold">Current NAV</p>
-                        </div>
-                    </div>
-                    
-                    <div class="h-[400px] w-full">
-                        <canvas id="mainChart"></canvas>
-                    </div>
-                </div>
-
-                <div class="bg-blue-50 border border-blue-100 rounded-xl p-6">
-                    <h3 class="text-blue-800 font-bold mb-2">How to read this data?</h3>
-                    <p class="text-blue-700 text-sm leading-relaxed">
-                        The values shown are Net Asset Values (NAV). Tier I funds are for retirement savings with tax benefits, while Tier II are voluntary savings accounts. 
-                        <strong>Scheme E</strong> focuses on Equity, <strong>Scheme C</strong> on Corporate Debt, and <strong>Scheme G</strong> on Government Bonds.
-                    </p>
+                <div class="alert alert-info small">
+                    <strong>Tip:</strong> Use 119551 for HDFC Infrastructure or 102885 for SBI Bluechip.
                 </div>
             </div>
         </div>
-    </main>
 
-    <script>
-        let chart;
-        const fundListContainer = document.getElementById('fundList');
-        
-        // Initialize Chart
-        const ctx = document.getElementById('mainChart').getContext('2d');
-        chart = new Chart(ctx, {
-            type: 'line',
-            data: { labels: [], datasets: [{ label: 'NAV (₹)', data: [], borderColor: '#3b82f6', tension: 0.3, fill: true, backgroundColor: 'rgba(59, 130, 246, 0.05)' }]},
-            options: { responsive: true, maintainAspectRatio: false }
-        });
+        <div class="col-lg-8">
+            <div class="card p-4 mb-4">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <h3 id="fundName">Select a fund to start tracking</h3>
+                        <span id="fundCategory" class="badge bg-secondary mb-2">Category: N/A</span>
+                    </div>
+                    <div class="text-end">
+                        <div class="nav-value" id="currentNav">₹ 0.00</div>
+                        <div class="text-muted small" id="lastUpdated">Updated: --</div>
+                    </div>
+                </div>
+                <hr>
+                <div id="chart-container">
+                    <canvas id="navChart"></canvas>
+                </div>
+            </div>
 
-        // 1. Fetch All Schemes on Load
-        async function loadAllSchemes() {
-            try {
-                const response = await fetch('https://npsnav.in/api/schemes');
-                const schemes = await response.json();
-                renderList(schemes);
-            } catch (err) {
-                fundListContainer.innerHTML = '<div class="p-4 text-red-500 text-sm">Failed to load funds. Please refresh.</div>';
-            }
-        }
-
-        function renderList(schemes) {
-            fundListContainer.innerHTML = '';
-            schemes.forEach(s => {
-                const div = document.createElement('div');
-                div.className = "p-4 border-b hover:bg-blue-50 cursor-pointer transition-all fund-item";
-                div.innerHTML = `
-                    <p class="text-xs font-bold text-blue-600 uppercase">${s.scheme_code}</p>
-                    <p class="text-sm font-semibold text-gray-800">${s.scheme_name}</p>
-                `;
-                div.onclick = () => fetchFundData(s.scheme_code, s.scheme_name);
-                fundListContainer.appendChild(div);
-            });
-        }
-
-        // 2. Fetch Historical Data for specific fund
-        async function fetchFundData(code, name) {
-            document.getElementById('activeFundName').innerText = name;
-            document.getElementById('activeFundCode').innerText = "Scheme Code: " + code;
-            
-            try {
-                const response = await fetch(`https://npsnav.in/api/historical/${code}`);
-                const result = await response.json();
-                const history = result.data;
-
-                // Update NAV Display (Latest entry)
-                document.getElementById('currentNav').innerText = "₹" + history[0].nav;
-
-                // Update Chart
-                const labels = history.slice(0, 30).reverse().map(i => i.date);
-                const values = history.slice(0, 30).reverse().map(i => i.nav);
-                
-                chart.data.labels = labels;
-                chart.data.datasets[0].data = values;
-                chart.update();
-            } catch (e) {
-                alert("Could not fetch historical data for this fund.");
-            }
-        }
-
-        // 3. Simple Search Filter
-        function filterFunds() {
-            const input = document.getElementById('searchInput').value.toLowerCase();
-            const items = document.getElementsByClassName('fund-item');
-            Array.from(items).forEach(item => {
-                const text = item.innerText.toLowerCase();
-                item.style.display = text.includes(input) ? "block" : "none";
-            });
-        }
-
-        loadAllSchemes();
-    </script>
-</body>
-</html>
+            <div class="card p-4">
+                <h5 class="mb-3">Watchlist Performance</h5>
+                <div class="table-responsive">
+                    <table class="table align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Scheme Name</th>
+                                <th>Category</th>
+                                <th>Live NAV</th>
+                                <th>Trend</th>
+                            </tr>
+                        </thead>
+                        <tbody id="watchlistBody
